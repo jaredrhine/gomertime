@@ -49,25 +49,33 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 
 - Lua engine embedded to write rules
 
-## TODO
+## Work plan
 
+- ~~Project name~~
+- ~~Basic go module~~
+- ~~World tick update loop~~
+- ~~Terminal clear and display shell~~
+- ~~Prototype core with keyboard, display, world tick integrated~~
+- ~~Detect keyboard press async~~
+- ~~'q' to exit~~
+- ~~Pause key~~
+- Temporary hard-coded world/entity creation/setup
+- Display representation of world
+- Display viewport can move around world
 - id generator (sequence for entity probably)
 - NewEntity
 - loop over systems (for _, system := range world.Systems() ?)
 - Center of mass position
 - Velocity
-- World tick loop
-- Dump screen
+- Rewrite using `time.NewTicker`
 - Bounce off walls
 - Multiple components at same position
 - Find nearby items
 - Keyboard
-- Pause key
-- Exit key
 - Force -> Acceleration
 - Friction
 - Go modules
 - Mass of iron
-- Webassembly
+- WebAssembly
 - Canvas output
 - Go channels
