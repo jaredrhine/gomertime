@@ -60,6 +60,9 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - ~~'q' to exit~~
 - ~~Pause key~~
 - Temporary hard-coded world/entity creation/setup
+- Debug dump state
+- Fake/inefficient ECS storage backend; defer archetype implementation
+- Position lookup/query
 - Display representation of world
 - Display viewport can move around world
 - id generator (sequence for entity probably)
@@ -68,6 +71,7 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - Center of mass position
 - Velocity
 - Rewrite using `time.NewTicker`
+- Dev console/palette
 - Bounce off walls
 - Multiple components at same position
 - Find nearby items
@@ -79,3 +83,4 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - WebAssembly
 - Canvas output
 - Go channels
+- Camera follows entity
