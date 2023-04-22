@@ -59,28 +59,45 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - ~~Detect keyboard press async~~
 - ~~'q' to exit~~
 - ~~Pause key~~
-- Temporary hard-coded world/entity creation/setup
-- Debug dump state
-- Fake/inefficient ECS storage backend; defer archetype implementation
+- ~~Decide that components will belong to single entities, rather than being able to be shared between entities~~
+- ~~id generator (sequence for entity probably)~~
+- ~~Component~~
+- ~~Entity~~
+- ~~Temporary hard-coded world/entity creation/setup~~
+- ~~Fake/inefficient ECS storage backend; defer archetype implementation~~
+- ~~Debug dump state~~
+- Don't clear text screen every frame, only when needed. Minimize flashing.
 - Position lookup/query
 - Display representation of world
 - Display viewport can move around world
-- id generator (sequence for entity probably)
-- NewEntity
+- Dynamic terminal height/width
+- Data on component
 - loop over systems (for _, system := range world.Systems() ?)
-- Center of mass position
+- systems as goroutines. first: mover
 - Velocity
-- Rewrite using `time.NewTicker`
+- Conway game of life rule implementation
 - Dev console/palette
-- Bounce off walls
+- Acceleration
+- Genericize into IdType uint64
+- Buildings which transform goods
+- Rewrite using `time.NewTicker`
+- Edge of world handling. Bounce off walls. Hard stop.
 - Multiple components at same position
 - Find nearby items
-- Keyboard
-- Force -> Acceleration
-- Friction
-- Go modules
+- Benchmarking
+- Pathfinding
+- Force and Acceleration
+- Split into multiple modules
+- Food consumption
 - Mass of iron
+- Light source
+- Camera follows entity
+- Split server and client
+- Register and calculate multiple viewports, supporting multiple clients looking at different places of the world. Clients register their viewport for the server to precalculate.
 - WebAssembly
 - Canvas output
-- Go channels
-- Camera follows entity
+- Optimization of PositionSummary. Perhaps only calculate all positions within a region
+- Entity size/shape somehow. Entities can spread over multiple coordinates. Center of mass position.
+- Friction
+- Destructability
+- Toxins

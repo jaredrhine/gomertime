@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/buger/goterm"
+	tm "github.com/buger/goterm"
 	"github.com/eiannone/keyboard"
 )
 
@@ -23,7 +26,7 @@ const (
 
 // IDs
 
-// TODO: genericize into IdType uint64
+// TODO:
 
 var idCounter uint64 = 0
 
@@ -32,54 +35,102 @@ func NextId() uint64 {
 	return idCounter
 }
 
-// Components
+// Data bags
 
 type Position struct {
-	cid uint64
-	x   float64
-	y   float64
-	z   float64
+	x float64
+	y float64
+	z float64
 }
 
 type Velocity struct {
-	cid     uint64
 	x, y, z float64
 }
 
-func newPosition(x float64, y float64, z float64) *Position {
-	p := Position{cid: NextId(), x: x, y: y, z: z}
-	return &p
-}
+// Components
 
-func newFlatlandPosition(x float64, y float64) *Position {
-	return newPosition(x, y, 0)
-}
-
-func newVelocity(x float64, y float64, z float64) *Velocity {
-	v := Velocity{cid: NextId(), x: x, y: y, z: z}
-	return &v
-}
-
-func newFlatlandVelocity(x float64, y float64) *Velocity {
-	return newVelocity(x, y, 0)
+type Component struct {
+	id         uint64
+	name       string
+	entityData map[uint64]any
+	lock       *sync.RWMutex
 }
 
 // Entities
 
-type Entity struct{}
+type Entity struct {
+	id   uint64
+	name string
+}
 
-type Booper struct {
-	centerOfMass Position
-	velocity     Velocity
+func (entity *Entity) AddComponent(component *Component, data any) {
+	component.lock.Lock()
+	component.entityData[entity.id] = data
+	component.lock.Unlock()
 }
 
 // Storage
 
 // Note: A good ECS system will use optimized data structures to support high-performance querying and update of millions of components. Here, we build a naive implementation to first focus on the interfaces and simulation aspects of this codebase.
 
-type WorldStorage struct {
-	entitiesById map[uint64]Entity
-	// componentsById map[uint64]Component
+type PositionKey [2]int
+
+type WorldStore struct {
+	entitiesById    map[uint64]*Entity
+	componentsById  map[uint64]*Component
+	positionSummary map[PositionKey]uint64
+}
+
+func NewWorldStore() (store *WorldStore) {
+	store = &WorldStore{
+		entitiesById:    make(map[uint64]*Entity),
+		componentsById:  make(map[uint64]*Component),
+		positionSummary: make(map[PositionKey]uint64),
+	}
+	return
+}
+
+func (store *WorldStore) NewEntity(name string) (entity *Entity) {
+	entity = &Entity{
+		id:   NextId(),
+		name: name,
+	}
+	store.entitiesById[entity.id] = entity
+	return
+}
+
+func (store *WorldStore) NewComponent(name string) (component *Component) {
+	component = &Component{
+		id:         NextId(),
+		name:       name,
+		entityData: make(map[uint64]any),
+		lock:       &sync.RWMutex{},
+	}
+	store.componentsById[component.id] = component
+	return
+}
+
+func (store *WorldStore) GetComponentByName(name string) (component *Component, err error) {
+	component = nil
+	err = nil
+	for _, comp := range store.componentsById {
+		if comp.name == name {
+			component = comp
+			return
+		}
+	}
+	err = errors.New("component not found")
+	return
+}
+
+func (store *WorldStore) UpdatePositionSummary() {
+	positionComponent, _ := store.GetComponentByName("position")
+	for eid, data := range positionComponent.entityData {
+		x := data.(*Position).x
+		y := data.(*Position).y
+		key := [2]int{int(x), int(y)}
+		store.positionSummary[key] = eid
+	}
 }
 
 // World, physics
@@ -88,38 +139,35 @@ type World struct {
 	tickCurrent int
 }
 
-func newWorld() *World {
+func NewWorld() *World {
 	w := World{tickCurrent: worldTickStart}
 	return &w
 }
 
-func (world *World) updateWorld() {
+func (world *World) UpdateWorld() {
 	// TODO: update each component
 }
 
-func (world *World) runTick() {
+func (world *World) RunTick() {
 	world.tickCurrent += 1
-	world.updateWorld()
-}
-
-func (world *World) newBooper() {
-	// pos = Position{cid: NextId(), x: 2, y: 3, z: 0}
-	// booper = Booper{centerOfMass: pos, velocity: vel}
-
+	world.UpdateWorld()
 }
 
 // Controller, agent, UI
 // Note: Engine, container, display, agents, startup loop should all be properly separated. Here, we lump them all together for prototyping/first-pass.
 
 const (
-	WorldScreen uint8 = iota
+	WorldScreen int = iota
 	HelpScreen
 	DevScreen
 )
 
 type Controller struct {
-	world      *World
-	userScreen uint8
+	world       *World
+	store       *WorldStore
+	displayRows int
+	displayCols int
+	userScreen  int
 }
 
 type KeyboardEvent struct {
@@ -127,13 +175,24 @@ type KeyboardEvent struct {
 	key  keyboard.Key
 }
 
-func newControllerAndWorld() *Controller {
-	world := newWorld()
-	c := Controller{world: world, userScreen: WorldScreen}
-	return &c
+func NewControllerAndWorld() (controller *Controller) {
+	world := NewWorld()
+	store := NewWorldStore()
+	width := int(tm.Width())
+	if width > 60 {
+		width = 60
+	}
+	controller = &Controller{
+		world:       world,
+		store:       store,
+		displayRows: int(tm.Height()),
+		displayCols: width,
+		userScreen:  WorldScreen,
+	}
+	return
 }
 
-func (controller *Controller) tickAlmostForever() {
+func (controller *Controller) TickAlmostForever() {
 	w := controller.world
 	timeToExit := false
 	tickRunning := true
@@ -171,9 +230,10 @@ func (controller *Controller) tickAlmostForever() {
 			}
 		default:
 			if tickRunning {
-				w.runTick()
+				w.RunTick()
+				controller.store.UpdatePositionSummary()
 			}
-			controller.textDump(w)
+			controller.TextDump(w)
 			time.Sleep(time.Millisecond * worldTickSleepMillisecond) // TODO: do time subtraction and wait milliseconds; use time.NewTicker
 		}
 
@@ -182,50 +242,104 @@ func (controller *Controller) tickAlmostForever() {
 		}
 
 		if timeToExit {
+			tm.MoveCursor(1, controller.displayRows)
+			tm.Println("")
+			tm.Flush()
 			keyboard.Close()
 			break
 		}
 	}
 }
 
-func (controller *Controller) textDump(world *World) {
-	goterm.Clear()
-	goterm.MoveCursor(1, 1)
-	goterm.Println("gomertime - toy simulation in go")
-	goterm.MoveCursor(1, 3)
+func (controller *Controller) TextDump(world *World) {
+	screenLabel := ""
+
+	var hrow strings.Builder
+	for i := 0; i < controller.displayCols; i++ {
+		hrow.WriteRune('-')
+	}
+
+	title := "gomertime - toy simulation in go"
+	titleRich := tm.Background(tm.Color(tm.Bold(title), tm.WHITE), tm.BLUE)
+
+	tm.Clear()
+
+	// main: dependent on selected screen
+	tm.MoveCursor(1, 3)
 	switch controller.userScreen {
 	case DevScreen:
-		controller.textDumpDev(world)
+		screenLabel = "dev"
+		controller.TextDumpDev(world)
 	default:
-		controller.textDumpWorld(world)
+		screenLabel = "world"
+		controller.TextDumpWorld(world)
 	}
-	goterm.MoveCursor(1, 10)
-	goterm.Print("<q> to exit")
-	goterm.Println(" | tick", world.tickCurrent)
-	goterm.Flush()
+
+	// header: left-hand side
+	tm.MoveCursor(1, 1)
+	tm.Printf("%6s | %7d | ", screenLabel, world.tickCurrent)
+
+	// header: right-hand side
+	tm.MoveCursor(int(controller.displayCols-len(title)+1), 1)
+	tm.Print(titleRich)
+
+	// header: horizontal rule
+	tm.MoveCursor(1, 2)
+	tm.Print(hrow.String())
+
+	// footer: horizontal rule
+	tm.MoveCursor(1, int(controller.displayRows-2))
+	tm.Print(hrow.String())
+
+	// footer: global buttons
+	tm.MoveCursor(1, int(controller.displayRows))
+	tm.Print("<q> to exit")
+
+	// cursor: temporary cursor centerish position, revisit after viewport and motion
+	tm.MoveCursor(int(controller.displayCols/2), int(controller.displayRows/2))
+
+	// write it all to screen. should be the only flush
+	tm.Flush()
 }
 
-func (controller *Controller) textDumpWorld(world *World) {
-	goterm.Println("TODO world")
+func (controller *Controller) TextDumpWorld(world *World) {
+	vertOffset := 3
+	for k := range controller.store.positionSummary {
+		x, y := k[0], k[1]
+		tm.MoveCursor(int(x), int(y)+vertOffset)
+		tm.Print("X")
+	}
 }
 
-func (controller *Controller) textDumpDev(world *World) {
-	goterm.Println("TODO dev")
-	goterm.MoveCursor(1, 9)
-	goterm.Print("<esc> to return to world view")
+func (controller *Controller) TextDumpDev(world *World) {
+	s := controller.store
+	tm.Printf("entity count: %d\n", len(s.entitiesById))
+	tm.Printf("entity dump: %#v\n", s.entitiesById)
+	tm.Printf("component count: %d\n", len(s.componentsById))
+	tm.Printf("component dump: %#v\n", s.componentsById)
+	tm.Printf("positions count: %#v\n", len(s.positionSummary))
+	tm.Printf("positions: %#v\n", s.positionSummary)
+
+	// modal ui button
+	tm.MoveCursor(1, int(controller.displayRows-1))
+	tm.Print("<esc> to return to world view")
 }
 
 // Simulation startup
 
-func initDevWorld(controller *Controller) {
-	w := controller.world
-	c1 = newFlatlandPosition(2, 3)
-	c2 = newFlatlandVelocity(0.2, 0.1)
-	entity = w.newEntity()
-	entity.addComponents(c1, c2)
+func InitDevWorld(controller *Controller) {
+	s := controller.store
+	e1 := s.NewEntity("entity1")
+	homebase := s.NewEntity("homebase")
+	c1 := s.NewComponent("position")
+	e1.AddComponent(c1, &Position{x: 1, y: 2, z: 0})
+	homebase.AddComponent(c1, &Position{x: 3, y: 5, z: 0})
+	v1 := s.NewComponent("velocity")
+	e1.AddComponent(v1, &Velocity{x: 0.5, y: 0.2, z: 0})
 }
 
 func main() {
-	controller := newControllerAndWorld()
-	controller.tickAlmostForever()
+	controller := NewControllerAndWorld()
+	InitDevWorld(controller)
+	controller.TickAlmostForever()
 }
