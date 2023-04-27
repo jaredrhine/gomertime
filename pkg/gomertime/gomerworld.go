@@ -1,11 +1,14 @@
-package main
+package gomertime
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"golang.org/x/exp/slog"
 
 	tm "github.com/buger/goterm"
 	"github.com/eiannone/keyboard"
@@ -14,14 +17,13 @@ import (
 // Globals
 
 const (
-	worldXMin, worldXMax             = -20, 20
-	worldYMin, worldYMax             = -20, 20
-	worldZMin, worldZMax             = -20, 20
-	textViewportXMin, textScreenXMax = -10, 10
-	textScreenYMin, textScreenYMax   = -10, 10
-	worldTickStart                   = 0
-	worldTickMax                     = 600
-	worldTickSleepMillisecond        = 250
+	worldXMin, worldXMax      = -50, 50
+	worldYMin, worldYMax      = -50, 50
+	worldZMin, worldZMax      = -50, 50
+	worldTickStart            = 0
+	worldTickMax              = 600
+	worldTickSleepMillisecond = 100
+	textDisplayMaxCols        = 60
 )
 
 // IDs
@@ -163,11 +165,16 @@ const (
 )
 
 type Controller struct {
-	world       *World
-	store       *WorldStore
-	displayRows int
-	displayCols int
-	userScreen  int
+	world           *World
+	store           *WorldStore
+	viewportOriginX float64
+	viewportOriginY float64
+	viewportOriginZ float64
+	displayRows     int
+	displayCols     int
+	headerRows      int
+	footerRows      int
+	userScreen      int
 }
 
 type KeyboardEvent struct {
@@ -178,16 +185,24 @@ type KeyboardEvent struct {
 func NewControllerAndWorld() (controller *Controller) {
 	world := NewWorld()
 	store := NewWorldStore()
-	width := int(tm.Width())
-	if width > 60 {
-		width = 60
+
+	currentHeight := int(tm.Height())
+	currentWidth := int(tm.Width())
+	if currentWidth > textDisplayMaxCols {
+		currentWidth = textDisplayMaxCols
 	}
+
 	controller = &Controller{
-		world:       world,
-		store:       store,
-		displayRows: int(tm.Height()),
-		displayCols: width,
-		userScreen:  WorldScreen,
+		world:           world,
+		store:           store,
+		userScreen:      WorldScreen,
+		displayRows:     currentHeight,
+		displayCols:     currentWidth,
+		headerRows:      2,
+		footerRows:      3,
+		viewportOriginX: 0,
+		viewportOriginY: 0,
+		viewportOriginZ: 0,
 	}
 	return
 }
@@ -219,6 +234,14 @@ func (controller *Controller) TickAlmostForever() {
 	for {
 		select {
 		case event := <-ch:
+			// for prototyping/development, show keycodes on dev/debug screen
+			if controller.userScreen == DevScreen {
+				keyDebug := fmt.Sprintf("%3d %6d", event.rune, event.key)
+				tm.MoveCursor(controller.displayCols-len(keyDebug)+2, controller.displayRows)
+				tm.Print(keyDebug)
+			}
+
+			// handle each key differently
 			if event.rune == 'q' || event.key == 3 { // q, ctrl-c
 				timeToExit = true
 			} else if event.key == 32 { // space
@@ -227,6 +250,18 @@ func (controller *Controller) TickAlmostForever() {
 				controller.userScreen = WorldScreen
 			} else if event.rune == 'd' {
 				controller.userScreen = DevScreen
+
+				// handle arrow keys to move viewport in world screen only
+			} else if controller.userScreen == WorldScreen {
+				if event.key == keyboard.KeyArrowLeft {
+					controller.viewportOriginX = controller.viewportOriginX - 1
+				} else if event.key == keyboard.KeyArrowRight {
+					controller.viewportOriginX = controller.viewportOriginX + 1
+				} else if event.key == keyboard.KeyArrowUp {
+					controller.viewportOriginY = controller.viewportOriginY + 1
+				} else if event.key == keyboard.KeyArrowDown {
+					controller.viewportOriginY = controller.viewportOriginY - 1
+				}
 			}
 		default:
 			if tickRunning {
@@ -255,13 +290,14 @@ func (controller *Controller) TextDump(world *World) {
 	screenLabel := ""
 
 	var hrow strings.Builder
-	for i := 0; i < controller.displayCols; i++ {
+	for i := 0; i <= controller.displayCols; i++ {
 		hrow.WriteRune('-')
 	}
 
 	title := "gomertime - toy simulation in go"
 	titleRich := tm.Background(tm.Color(tm.Bold(title), tm.WHITE), tm.BLUE)
 
+	posText := fmt.Sprintf("%3.0f,%3.0f", controller.viewportOriginX, controller.viewportOriginY)
 	tm.Clear()
 
 	// main: dependent on selected screen
@@ -277,10 +313,10 @@ func (controller *Controller) TextDump(world *World) {
 
 	// header: left-hand side
 	tm.MoveCursor(1, 1)
-	tm.Printf("%6s | %7d | ", screenLabel, world.tickCurrent)
+	tm.Printf("%6s | %7d | %s", screenLabel, world.tickCurrent, posText)
 
-	// header: right-hand side
-	tm.MoveCursor(int(controller.displayCols-len(title)+1), 1)
+	// header: right-hand side (right margin aligned)
+	tm.MoveCursor(int(controller.displayCols-len(title)+2), 1)
 	tm.Print(titleRich)
 
 	// header: horizontal rule
@@ -303,12 +339,55 @@ func (controller *Controller) TextDump(world *World) {
 }
 
 func (controller *Controller) TextDumpWorld(world *World) {
-	vertOffset := 3
-	for k := range controller.store.positionSummary {
-		x, y := k[0], k[1]
-		tm.MoveCursor(int(x), int(y)+vertOffset)
-		tm.Print("X")
+	slog.Info("TextDumpWorld")
+	for k, v := range controller.store.positionSummary {
+		inViewport, screenX, screenY, icon := textViewportCalc(controller.store.entitiesById[v].name, k[0], k[1], int(controller.viewportOriginX), int(controller.viewportOriginY), controller.displayCols, controller.displayRows, controller.headerRows, controller.footerRows)
+
+		if inViewport {
+			tm.MoveCursor(screenX, screenY)
+			tm.Print(icon)
+		}
 	}
+}
+
+func textIconForEntityLabel(label string) (icon string) {
+	icons := map[string]string{
+		"whacky":   "W",
+		"entity":   "E",
+		"homebase": "H",
+		"origin":   "O",
+	}
+	if val, err := icons[label]; err {
+		return val
+	} else {
+		return "X"
+	}
+}
+
+func textViewportCalc(label string, worldX int, worldY int, viewportX int, viewportY int, width int, height int, headerRows int, footerRows int) (inViewport bool, screenX int, screenY int, icon string) {
+	height -= footerRows + headerRows
+
+	vpXmin := viewportX
+	vpXmax := viewportX + width
+	vpYmin := viewportY
+	vpYmax := viewportY - height
+
+	inViewport = worldX >= vpXmin && worldX <= vpXmax && worldY <= vpYmin && worldY >= vpYmax
+
+	screenX = worldX - viewportX + 1
+	screenY = viewportY - worldY + 1 + headerRows
+
+	icon = textIconForEntityLabel(label)
+
+	msg := fmt.Sprintf("textViewportCalc label=<%s/%s> show=<%t> vp=<%d=>%d,%d=>%d> pos=<%d,%d> -> screen=<%d,%d>", label, icon, inViewport, vpXmin, vpXmax, vpYmin, vpYmax, worldX, worldY, screenX, screenY)
+	slog.Info(msg)
+
+	// TODO: optimize by moving up to avoid unused calculations. Here now for debugging.
+	if !inViewport {
+		return false, 0, 0, ""
+	}
+
+	return true, screenX, screenY, icon
 }
 
 func (controller *Controller) TextDumpDev(world *World) {
@@ -326,20 +405,3 @@ func (controller *Controller) TextDumpDev(world *World) {
 }
 
 // Simulation startup
-
-func InitDevWorld(controller *Controller) {
-	s := controller.store
-	e1 := s.NewEntity("entity1")
-	homebase := s.NewEntity("homebase")
-	c1 := s.NewComponent("position")
-	e1.AddComponent(c1, &Position{x: 1, y: 2, z: 0})
-	homebase.AddComponent(c1, &Position{x: 3, y: 5, z: 0})
-	v1 := s.NewComponent("velocity")
-	e1.AddComponent(v1, &Velocity{x: 0.5, y: 0.2, z: 0})
-}
-
-func main() {
-	controller := NewControllerAndWorld()
-	InitDevWorld(controller)
-	controller.TickAlmostForever()
-}

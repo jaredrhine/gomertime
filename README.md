@@ -49,6 +49,12 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 
 - Lua engine embedded to write rules
 
+## Coordinate transform
+
+```text
+
+```
+
 ## Work plan
 
 - ~~Project name~~
@@ -62,19 +68,26 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - ~~Decide that components will belong to single entities, rather than being able to be shared between entities~~
 - ~~id generator (sequence for entity probably)~~
 - ~~Component~~
+- ~~Position, velocity components stored as 3D float~~
 - ~~Entity~~
 - ~~Temporary hard-coded world/entity creation/setup~~
 - ~~Fake/inefficient ECS storage backend; defer archetype implementation~~
 - ~~Debug dump state~~
-- Don't clear text screen every frame, only when needed. Minimize flashing.
-- Position lookup/query
-- Display representation of world
-- Display viewport can move around world
-- Dynamic terminal height/width
-- Data on component
+- ~~Lookup console height/width on start~~
+- ~~Position lookup/query~~
+- ~~Display representation of world~~
+- Split out main package from pkg code
+- First test for position to text screen mapping
+- Cache viewport boundaries (xmin/xmax/ymin/ymax)
+- Position updates based on velocity each tick
 - loop over systems (for _, system := range world.Systems() ?)
-- systems as goroutines. first: mover
-- Velocity
+- Display viewport can move around world
+- Different characters for different entities
+- Limit console vertical height
+- Dynamic terminal height/width
+- Data blob for component, independent of entity-specific data
+- Don't clear text screen every frame, only when needed. Minimize flashing.
+- systems as goroutines. first: mover managing position
 - Conway game of life rule implementation
 - Dev console/palette
 - Acceleration
@@ -101,3 +114,4 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - Friction
 - Destructability
 - Toxins
+- Vertical support in text somehow
