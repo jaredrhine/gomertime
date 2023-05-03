@@ -76,10 +76,12 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - ~~Lookup console height/width on start~~
 - ~~Position lookup/query~~
 - ~~Display representation of world~~
+- ~~First test for position to text screen mapping~~
+- ~~Move WorldStore from controller to world~~
 - Split out main package from pkg code
-- First test for position to text screen mapping
-- Cache viewport boundaries (xmin/xmax/ymin/ymax)
 - Position updates based on velocity each tick
+- WebSocket server framework, listens on socket
+- Cache viewport boundaries (xmin/xmax/ymin/ymax)
 - loop over systems (for _, system := range world.Systems() ?)
 - Display viewport can move around world
 - Different characters for different entities
@@ -104,6 +106,7 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
 - Food consumption
 - Mass of iron
 - Light source
+- Logging file is set by default, stderr avoided, tuned
 - Camera follows entity
 - Split server and client
 - Register and calculate multiple viewports, supporting multiple clients looking at different places of the world. Clients register their viewport for the server to precalculate.
