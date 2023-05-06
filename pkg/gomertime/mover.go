@@ -18,7 +18,7 @@ func (w *World) UpdatePositions() {
 		pxold := posaspect.x
 		pyold := posaspect.y
 
-		slog.Info(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, pxold, pyold, dx, dy))
+		slog.Debug(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, pxold, pyold, dx, dy))
 
 		// TODO: updating value in-place is sequence-dependent; better to use generations or some configurable order at least
 		posaspect.x = pxold + dx

@@ -61,7 +61,7 @@ func (controller *Controller) TextDump(world *World) {
 }
 
 func (controller *Controller) TextDumpWorld(world *World) {
-	slog.Info("TextDumpWorld")
+	slog.Debug("TextDumpWorld")
 	store := controller.world.store
 	for k, v := range store.positionSummary {
 		inViewport, screenX, screenY, icon := textViewportCalc(store.entitiesById[v].name, k[0], k[1], int(controller.viewportOriginX), int(controller.viewportOriginY), controller.displayCols, controller.displayRows, controller.headerRows, controller.footerRows)
@@ -104,7 +104,7 @@ func textViewportCalc(label string, worldX int, worldY int, viewportX int, viewp
 	icon = textIconForEntityLabel(label)
 
 	msg := fmt.Sprintf("textViewportCalc label=<%s/%s> show=<%t> vp=<%d=>%d,%d=>%d> pos=<%d,%d> -> screen=<%d,%d>", label, icon, inViewport, vpXmin, vpXmax, vpYmin, vpYmax, worldX, worldY, screenX, screenY)
-	slog.Info(msg)
+	slog.Debug(msg)
 
 	// TODO: optimize by moving up to avoid unused calculations. Here now for debugging.
 	if !inViewport {

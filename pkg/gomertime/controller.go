@@ -6,6 +6,7 @@ import (
 
 	tm "github.com/buger/goterm"
 	"github.com/eiannone/keyboard"
+	"golang.org/x/exp/slog"
 )
 
 // Controller, agent, UI
@@ -31,6 +32,7 @@ type Controller struct {
 	headerRows      int
 	footerRows      int
 	userScreen      int
+	ticker          chan bool
 }
 
 type KeyboardEvent struct {
@@ -73,28 +75,36 @@ func (c *Controller) TickAlmostForever() {
 		_ = keyboard.Close()
 	}()
 
-	ch := make(chan KeyboardEvent)
+	keych := make(chan KeyboardEvent)
 
-	go func(ch chan<- KeyboardEvent) {
+	go func(keych chan<- KeyboardEvent) {
 		for {
 			char, key, err := keyboard.GetSingleKey()
 			if err != nil {
 				timeToExit = true
 			}
-			ch <- KeyboardEvent{rune: char, key: key}
+			keych <- KeyboardEvent{rune: char, key: key}
 		}
-	}(ch)
+	}(keych)
+
+	ticker := make(chan bool, 1)
+	c.ticker = ticker
+	go func(ticker <-chan bool) {
+		for {
+			<-ticker
+			slog.Debug("ticker")
+		}
+	}(ticker)
 
 	for {
 		select {
-		case event := <-ch:
+		case event := <-keych:
 			// for prototyping/development, show keycodes on dev/debug screen
 			if c.userScreen == DevScreen {
 				keyDebug := fmt.Sprintf("%3d %6d", event.rune, event.key)
 				tm.MoveCursor(c.displayCols-len(keyDebug)+2, c.displayRows)
 				tm.Print(keyDebug)
 			}
-
 			// handle each key differently
 			if event.rune == 'q' || event.key == 3 { // q, ctrl-c
 				timeToExit = true
@@ -121,6 +131,7 @@ func (c *Controller) TickAlmostForever() {
 			if tickRunning {
 				w.RunTick()
 				w.store.UpdatePositionSummary()
+				ticker <- true
 			}
 			c.TextDump(w)
 			time.Sleep(time.Millisecond * worldTickSleepMillisecond) // TODO: do time subtraction and wait milliseconds; use time.NewTicker

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"os"
 
 	gomer "github.com/jaredrhine/gomertime/pkg/gomertime"
@@ -11,14 +10,11 @@ import (
 func main() {
 	file, _ := os.Create("/tmp/gomertime.log")
 	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	logger := slog.New(slog.NewTextHandler(w))
+	logger := slog.New(slog.NewTextHandler(file))
 	slog.SetDefault(logger)
 
 	controller := gomer.NewControllerAndWorld()
 	gomer.InitMainWorld(controller)
-	controller := gt.NewControllerAndWorld()
-	gt.InitMainWorld(controller)
+	go gomer.StartServer(controller)
 	controller.TickAlmostForever()
 }
