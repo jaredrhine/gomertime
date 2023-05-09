@@ -119,7 +119,7 @@ func TestTextViewportCalc(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.description, func(t *testing.T) {
-			show, x, y, icon := textViewportCalc(tt.label, tt.worldX, tt.worldY, tt.viewportX, tt.viewportY, tt.width, tt.height)
+			show, x, y, icon := TextViewportCalc(tt.label, tt.worldX, tt.worldY, tt.viewportX, tt.viewportY, tt.width, tt.height, 2, 3)
 			if show != tt.expectedShow || x != tt.expectedScreenX || y != tt.expectedScreenY || icon != tt.expectedIcon {
 				t.Errorf("show got %t wanted %t, worldX got %d wanted %d, worldY got %d wanted %d", show, tt.expectedShow, x, tt.expectedScreenX, y, tt.expectedScreenY)
 			}

@@ -1,12 +1,13 @@
 package gomertime
 
 const (
-	worldXMin, worldXMax      = -50, 50
-	worldYMin, worldYMax      = -50, 50
-	worldZMin, worldZMax      = -50, 50
+	worldXMin, worldXMax      = -25, 25
+	worldYMin, worldYMax      = -25, 25
+	worldZMin, worldZMax      = -25, 25
 	worldTickStart            = 0
-	worldTickMax              = 600
-	worldTickSleepMillisecond = 100
+	worldTickMax              = 60000
+	worldTickSleepMillisecond = 125
+	worldWraps                = true
 )
 
 type World struct {

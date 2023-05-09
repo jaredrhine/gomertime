@@ -64,7 +64,7 @@ func (controller *Controller) TextDumpWorld(world *World) {
 	slog.Debug("TextDumpWorld")
 	store := controller.world.store
 	for k, v := range store.positionSummary {
-		inViewport, screenX, screenY, icon := textViewportCalc(store.entitiesById[v].name, k[0], k[1], int(controller.viewportOriginX), int(controller.viewportOriginY), controller.displayCols, controller.displayRows, controller.headerRows, controller.footerRows)
+		inViewport, screenX, screenY, icon := TextViewportCalc(store.entitiesById[v].name, k[0], k[1], int(controller.viewportOriginX), int(controller.viewportOriginY), controller.displayCols, controller.displayRows, controller.headerRows, controller.footerRows)
 
 		if inViewport {
 			tm.MoveCursor(screenX, screenY)
@@ -88,7 +88,7 @@ func textIconForEntityLabel(label string) (icon string) {
 	}
 }
 
-func textViewportCalc(label string, worldX int, worldY int, viewportX int, viewportY int, width int, height int, headerRows int, footerRows int) (inViewport bool, screenX int, screenY int, icon string) {
+func TextViewportCalc(label string, worldX int, worldY int, viewportX int, viewportY int, width int, height int, headerRows int, footerRows int) (inViewport bool, screenX int, screenY int, icon string) {
 	height -= footerRows + headerRows
 
 	vpXmin := viewportX

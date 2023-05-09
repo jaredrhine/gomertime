@@ -2,7 +2,6 @@ package gomertime
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -23,15 +22,25 @@ type gomerServer struct {
 	controller *Controller
 }
 
+type PositionOnWire struct {
+	PositionX int
+	PositionY int
+	PositionZ int
+	Label     string
+}
+
 func viewportUpdate(ctx context.Context, c *websocket.Conn, ctrl *Controller) error {
-	origpos := ctrl.world.store.positionSummary
-	pos := make(map[string]string)
-	for key, eid := range origpos {
-		newkey := fmt.Sprintf("%d,%d", key[0], key[1])
-		label := ctrl.world.store.entitiesById[eid].name
-		pos[newkey] = label
+	s := ctrl.world.store
+	sum := s.positionSummary
+
+	pos := make([]PositionOnWire, len(sum))
+	i := 0
+	for key, eid := range sum {
+		label := s.entitiesById[eid].name
+		wire := PositionOnWire{PositionX: key[0], PositionY: key[1], PositionZ: 0, Label: label}
+		pos[i] = wire
+		i = i + 1
 	}
-	slog.Info("position", "pos", pos)
 	err := wsjson.Write(ctx, c, pos)
 	if err != nil {
 		slog.Error("problem writing to websocket", err)
@@ -40,7 +49,7 @@ func viewportUpdate(ctx context.Context, c *websocket.Conn, ctrl *Controller) er
 }
 
 func StartServer(controller *Controller) error {
-	l, err := net.Listen("tcp", "127.0.0.1:5555")
+	l, err := net.Listen("tcp", ServerListenAddress())
 	if err != nil {
 		return err
 	}
@@ -94,8 +103,9 @@ func (s gomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for {
+		// TODO: listen/register with new tickers
 		<-s.controller.ticker
-		slog.Info("ServeHTTP for loop start", "tick", s.controller.world.tickCurrent)
+		slog.Info("inside for loop in ServeHTTP", "tick", s.controller.world.tickCurrent)
 
 		err = viewportUpdate(r.Context(), c, s.controller)
 		if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
@@ -106,4 +116,8 @@ func (s gomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+func ServerListenAddress() string {
+	return "localhost:5555"
 }

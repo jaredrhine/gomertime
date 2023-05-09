@@ -105,7 +105,8 @@ func (c *Controller) TickAlmostForever() {
 				tm.MoveCursor(c.displayCols-len(keyDebug)+2, c.displayRows)
 				tm.Print(keyDebug)
 			}
-			// handle each key differently
+
+			// global control, screen change
 			if event.rune == 'q' || event.key == 3 { // q, ctrl-c
 				timeToExit = true
 			} else if event.key == 32 { // space
@@ -121,10 +122,10 @@ func (c *Controller) TickAlmostForever() {
 					c.viewportOriginX = c.viewportOriginX - 1
 				} else if event.key == keyboard.KeyArrowRight {
 					c.viewportOriginX = c.viewportOriginX + 1
-				} else if event.key == keyboard.KeyArrowUp {
-					c.viewportOriginY = c.viewportOriginY + 1
 				} else if event.key == keyboard.KeyArrowDown {
 					c.viewportOriginY = c.viewportOriginY - 1
+				} else if event.key == keyboard.KeyArrowUp {
+					c.viewportOriginY = c.viewportOriginY + 1
 				}
 			}
 		default:

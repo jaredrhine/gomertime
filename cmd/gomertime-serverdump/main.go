@@ -12,7 +12,7 @@ import (
 )
 
 func gomerRead() {
-	url := "ws://localhost:5555"
+	url := fmt.Sprintf("ws://%s", gomer.ServerListenAddress())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -22,19 +22,18 @@ func gomerRead() {
 	if err != nil {
 		panic(err)
 	}
-	defer c.Close(websocket.StatusInternalError, "the sky is falling")
+	defer c.Close(websocket.StatusInternalError, "websocket server connection has closed")
 
-	v := map[gomer.PositionKey]uint64{}
+	var v []gomer.PositionOnWire
 
 	for {
 		err = wsjson.Read(ctx, c, &v)
 		if err != nil {
-			fmt.Println("error", err)
+			panic(err)
 		}
 
 		fmt.Println("pos", v)
 	}
-
 }
 
 func main() {
