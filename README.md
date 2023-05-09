@@ -4,6 +4,40 @@ Author: Jared Rhine <jared@wordzoo.com>
 
 Last update: April 2023
 
+## Usage
+
+1. Install `go` using your preferred approach.
+
+1. Get the codebase from github:
+
+   ```shell
+    go version
+    git clone https://github.com/jaredrhine/gomertime
+    cd gomertime
+    go mod download
+   ```
+
+1. Run the gomertime server in one window/tab:
+
+   ```shell
+   go run cmd/gomertime/main.go
+   ```
+
+1. Run a gomertime client in another window/tab:
+
+   ```shell
+   go run cmd/gomertime/serverdump/main.go
+   ```
+
+Text UI keys:
+
+- `q` - quit
+- `escape` - quit
+- `control+c` - quit
+- `space` - pause
+- `d` - dev/debug screen
+- arrow keys - move the viewport up/down/left/right
+
 ## Design principles
 
 This codebase and line of work is undertaken with these goals in mind:
