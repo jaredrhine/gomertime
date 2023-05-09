@@ -1,59 +1,46 @@
 # Gomertime: Baby's first ECS simulation in go
 
 Author: Jared Rhine <jared@wordzoo.com>
+
 Last update: April 2023
 
 ## Design principles
 
-For this codebase, we're going to try coding an ECS simulation architecture from scratch as a learning exercise (for both ECS and go).
+This codebase and line of work is undertaken with these goals in mind:
 
-Don't get lost in the details:
-
-- Get a full end-to-end simulation running.
-- Stick with a text-only interface initially.
+1. This is a learning exercise, not an attempt to build a real game or community.
+   - ...so the whole codebase will be modern go (as written and evolved by a beginner).
+2. I want to learn go and in particular concurrency patterns using go channel idioms.
+3. I want to learn a bit about ECS (Entity/Component/System) architecture commonly used in games.
+   - ...so we'll recreate an ECS architecture from first principles, rather than using an existing ECS library.
+   - ...so we'll genericize the implementation to support two or more simulations within this one codebase.
+   - ...so we'll not start with an "archetype"-based ECS architecture, which is commonly done as a performance optimization to group entities for faster lookup.
+4. Don't get lost in the details
+   - Just get an end-to-end simulation running. Don't be afraid to take shortcuts around hard problems that real games need to solve.
+   - Focus on text-only interfaces.
+5. I want to support multiple-client and persistent server scenarios.
+   - ...so we'll move towards client/server architecture early
+     - ...and use JSON and WebSockets to learn HTTP-oriented go development, even though those probably aren't the right choices for a high-performance game framework.
 
 ## Sketch architecture
 
-Jared wants to learn:
+A "component" is a typed data bag, such as Position, Velocity, Food, Health that applies to one or more
 
-- go core language skills...
-  - ...so the whole codebase will be modern go (as written by a beginner).
-- ECS (Entity/Component/System) data-focused simulation/gaming architecture...
-  - ...so we'll recreate an ECS architecture from first principles, rather than using an existing ECS library.
-  - ...we'll genericize the implementation to support two or more simulations within this one codebase.
+An "entity" is really just a key/ID to represents an object or container which has multiple components.
 
-We will not start with an "archetype"-based ECS architecture, generally done as a performance optimization to group entities for faster lookup.
+A "system" is a code module which performs operations on subsets of components (say, "update position for all entities that have a velocity component")
 
-ECS provides multiple typed "data bags". This will be implemented as go named structs.
+Our first components will include:
 
-## Core code structure
+- Position
+- Velocity
+- Health
 
-## Notes
+Both Position and Velocity are modeled as a three-tuple of float values.
 
-- Very first model
-  - Center-of-mass position in 3-d space (but hard-code z position to zero)
-  - Velocity
-  - Mass of iron ore carried
+For Position, the 3-tuple represents the positive or negative X, Y, and Z cartesian coordinates of the entity located in a world centered on (0, 0, 0). The units for coordinate values are meters.
 
-- Potential components
-  - Position
-  - Velocity
-  - Charge
-  - Center of mass position
-  - Light
-  - Food
-
-- Simulation ideas
-  - Engineering with a company. Model dev motivation, daily work
-  - Reimplement "puffball" pro-forma ledger automation and modeling infrastructure as entities, and model ticks as the process over time.
-
-- Lua engine embedded to write rules
-
-## Coordinate transform
-
-```text
-
-```
+For Velocity, the 3-tuple represents a 3D vector, pointed in a specific direction. The units for vector values are meters per second.
 
 ## Work plan
 
@@ -88,7 +75,13 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
   - ~~WebSocket server framework, listens on socket~~
 
 - Shortlist
+  - Rationalize the float/integer values used in position summary
   - Utility function to count number of neighbors
+  - Implement
+  - Rewrite using `time.NewTicker`
+  - Add Health component
+  - Find nearby entities
+  - Conway game of life rule implementation
 
 - Server/client
   - Move position summary websockets push to array of objects, separate the x/y components while eliminating string key
@@ -103,14 +96,13 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
   - Limit console vertical to a maximum height
   - Camera follows entity
   - Web canvas output
+  - Zoom in/out
   - Don't clear text screen every frame, only when needed. Minimize flashing.
   - Vertical/elevation support in text somehow
   - Dev console/palette
 
 - Core, game loop, golang
-  - Find nearby entities
   - Buildings which transform goods
-  - Rewrite using `time.NewTicker`
   - Log level can be changed at start and at runtime(?)
   - systems as goroutines. first: mover managing position
   - loop over systems (for _, system := range world.Systems() ?)
@@ -124,10 +116,10 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
   - Split code into multiple modules
   - Data blob for component, independent of entity-specific data
   - Turn off worldTickMax by default
+  - Lua engine embedded to write rules
 
 - Simulation
   - Enforce world boundaries during motion, worldXMin, worldXMax...
-  - Conway game of life rule implementation
   - Food consumption
   - Pathfinding
   - Force and acceleration
@@ -142,3 +134,5 @@ ECS provides multiple typed "data bags". This will be implemented as go named st
   - Edge of world handling. Bounce off walls. Hard stop.
   - Toroidal world option to wrap around world
   - Fields, scalar (or vector) values at each position in the world. Magnetic, photon flux, gravity, ?
+  - Engineering with a company. Model dev motivation, daily work
+  - Reimplement "puffball" pro-forma ledger automation and modeling infrastructure as entities, and model ticks as the process over time.
