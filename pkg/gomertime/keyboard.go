@@ -12,13 +12,13 @@ type KeyboardEvent struct {
 	key  keyboard.Key
 }
 
-func NewTextAgentCommandSource() chan AgentCommand {
+func NewTextAgentCommandSource(app *TextClientApp) chan AgentCommand {
 	keyevents := make(chan KeyboardEvent)
 	commands := make(chan AgentCommand)
 
 	OpenKeyboard()
 	go KeypressToKeyEvents(keyevents)
-	go KeyEventsToCommands(keyevents, commands)
+	go KeyEventsToCommands(keyevents, commands, app)
 	return commands
 }
 
@@ -41,7 +41,7 @@ func KeypressToKeyEvents(eventch chan KeyboardEvent) {
 	}
 }
 
-func KeyEventsToCommands(k chan KeyboardEvent, c chan AgentCommand) {
+func KeyEventsToCommands(k chan KeyboardEvent, c chan AgentCommand, a *TextClientApp) {
 	send := func(code int) { c <- AgentCommand{code: code} }
 	for event := range k {
 		// global controls
@@ -58,16 +58,16 @@ func KeyEventsToCommands(k chan KeyboardEvent, c chan AgentCommand) {
 		}
 
 		// world-screen specific
-		// if a.userScreen == WorldScreen {
-		// 	if event.key == keyboard.KeyArrowUp {
-		// 		c <- AgentCommand{code: ViewportUpOne}
-		// 	} else if event.key == keyboard.KeyArrowDown {
-		// 		c <- AgentCommand{code: ViewportDownOne}
-		// 	} else if event.key == keyboard.KeyArrowLeft {
-		// 		c <- AgentCommand{code: ViewportLeftOne}
-		// 	} else if event.key == keyboard.KeyArrowRight {
-		// 		c <- AgentCommand{code: ViewportRightOne}
-		// 	}
-		// }
+		if a.display.userScreen == WorldScreen {
+			if event.key == keyboard.KeyArrowUp {
+				send(ViewportUpOne)
+			} else if event.key == keyboard.KeyArrowDown {
+				send(ViewportDownOne)
+			} else if event.key == keyboard.KeyArrowLeft {
+				send(ViewportLeftOne)
+			} else if event.key == keyboard.KeyArrowRight {
+				send(ViewportRightOne)
+			}
+		}
 	}
 }

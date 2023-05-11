@@ -22,10 +22,10 @@ type TextClientApp struct {
 
 func NewTextClientApp() *TextClientApp {
 	app := &TextClientApp{
-		display:  NewTextDisplayAgent(),
-		updates:  make(chan AgentUpdate),
-		commands: NewTextAgentCommandSource(),
+		display: NewTextDisplayAgent(),
+		updates: make(chan AgentUpdate),
 	}
+	app.HandleKeyboard()
 	return app
 }
 
@@ -34,6 +34,10 @@ func (a *TextClientApp) Startup() {
 	go ProcessGomerUpdates(a.updates, a)
 	go ProcessCommands(a.commands, a)
 	ConsoleClientLoop(a)
+}
+
+func (a *TextClientApp) HandleKeyboard() {
+	a.commands = NewTextAgentCommandSource(a)
 }
 
 func ReadUpdatesFromServer(updates chan AgentUpdate) {
