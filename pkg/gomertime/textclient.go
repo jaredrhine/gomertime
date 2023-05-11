@@ -75,7 +75,7 @@ func ProcessGomerUpdates(updates chan AgentUpdate, agent *TextClientApp) {
 
 func ConsoleClientLoop(app *TextClientApp) {
 	a := app.display
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second / clientTickTargetFramesPerSecond)
 
 	for {
 		<-ticker.C
