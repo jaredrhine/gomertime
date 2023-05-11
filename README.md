@@ -14,19 +14,19 @@ Last update: April 2023
     go version
     git clone https://github.com/jaredrhine/gomertime
     cd gomertime
-    go get
+    go mod download
    ```
 
 1. Run the gomertime server in one window/tab:
 
    ```shell
-   go run cmd/gomertime/main.go
+   go run cmd/server/main.go
    ```
 
 1. Run a gomertime client in another window/tab:
 
    ```shell
-   go run cmd/gomertime/serverdump/main.go
+   go run cmd/textclient/main.go
    ```
 
 Text UI keys:
