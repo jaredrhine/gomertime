@@ -8,6 +8,87 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type PositionDetails struct {
+	label string
+	icon  string
+}
+
+type TextDisplayAgent struct {
+	viewportOriginX   float64
+	viewportOriginY   float64
+	viewportOriginZ   float64
+	displayRows       int
+	displayCols       int
+	headerRows        int
+	footerRows        int
+	userScreen        int
+	clientTickCurrent int
+	serverTickCurrent int
+	timeToExit        bool
+	positions         []PositionOnWire
+}
+
+func NewTextDisplayAgent() *TextDisplayAgent {
+	currentHeight, currentWidth := CurrentConsoleDimensions()
+
+	return &TextDisplayAgent{
+		displayRows: currentHeight,
+		displayCols: currentWidth,
+	}
+}
+
+func (a *TextDisplayAgent) DisplayRefresh() {
+	var screenLabel string
+
+	var hrow strings.Builder
+	for i := 0; i <= a.displayCols; i++ {
+		hrow.WriteRune('-')
+	}
+
+	title := "gomertime - toy simulation in go"
+	titleRich := tm.Background(tm.Color(tm.Bold(title), tm.WHITE), tm.BLUE)
+
+	posText := fmt.Sprintf("%3.0f,%3.0f", a.viewportOriginX, a.viewportOriginY)
+	tm.Clear()
+
+	// main: dependent on selected screen
+	tm.MoveCursor(1, 3)
+	switch a.userScreen {
+	case DevScreen:
+		screenLabel = "dev"
+		a.PaintScreenDev()
+	default:
+		screenLabel = "world"
+		a.PaintScreenWorld()
+	}
+
+	// header: left-hand side
+	tm.MoveCursor(1, 1)
+	tm.Printf("%6s | %7d | %s", screenLabel, a.serverTickCurrent, posText)
+
+	// header: right-hand side (right margin aligned)
+	tm.MoveCursor(int(a.displayCols-len(title)+2), 1)
+	tm.Print(titleRich)
+
+	// header: horizontal rule
+	tm.MoveCursor(1, 2)
+	tm.Print(hrow.String())
+
+	// footer: horizontal rule
+	tm.MoveCursor(1, int(a.displayRows-2))
+	tm.Print(hrow.String())
+
+	// footer: global buttons
+	tm.MoveCursor(1, int(a.displayRows))
+	tm.Print("<q> to exit")
+
+	// cursor: temporary cursor centerish position, revisit after viewport and motion
+	tm.MoveCursor(int(a.displayCols/2), int(a.displayRows/2))
+
+	// write it all to screen. should be the only flush
+	tm.Flush()
+}
+
 func (controller *Controller) TextDump(world *World) {
 	screenLabel := ""
 
@@ -60,6 +141,29 @@ func (controller *Controller) TextDump(world *World) {
 	tm.Flush()
 }
 
+func (d *TextDisplayAgent) PaintScreenDev() {
+	// main dev/debug content
+	tm.Printf("position count: %d\n", len(d.positions))
+	tm.Printf("positions: %#v\n", d.positions)
+
+	// modal ui button
+	tm.MoveCursor(1, int(d.displayRows-1))
+	tm.Print("<esc> to return to world view")
+}
+
+func (d *TextDisplayAgent) PaintScreenWorld() {
+	for _, pos := range d.positions {
+		slog.Debug("PaintScreenWorld range", "pos", pos)
+		inViewport, screenX, screenY, icon := TextViewportCalc(pos.Label, pos.PositionX, pos.PositionY, int(d.viewportOriginX), int(d.viewportOriginY), d.displayCols, d.displayRows, d.headerRows, d.footerRows)
+
+		if inViewport {
+			tm.MoveCursor(screenX, screenY)
+			tm.Print(icon)
+		}
+
+	}
+}
+
 func (controller *Controller) TextDumpWorld(world *World) {
 	slog.Debug("TextDumpWorld")
 	store := controller.world.store
@@ -71,6 +175,20 @@ func (controller *Controller) TextDumpWorld(world *World) {
 			tm.Print(icon)
 		}
 	}
+}
+
+func (controller *Controller) TextDumpDev(world *World) {
+	s := controller.world.store
+	tm.Printf("entity count: %d\n", len(s.entitiesById))
+	tm.Printf("entity dump: %#v\n", s.entitiesById)
+	tm.Printf("component count: %d\n", len(s.componentsById))
+	tm.Printf("component dump: %#v\n", s.componentsById)
+	tm.Printf("positions count: %#v\n", len(s.positionSummary))
+	tm.Printf("positions: %#v\n", s.positionSummary)
+
+	// modal ui button
+	tm.MoveCursor(1, int(controller.displayRows-1))
+	tm.Print("<esc> to return to world view")
 }
 
 func textIconForEntityLabel(label string) (icon string) {
@@ -114,16 +232,13 @@ func TextViewportCalc(label string, worldX int, worldY int, viewportX int, viewp
 	return true, screenX, screenY, icon
 }
 
-func (controller *Controller) TextDumpDev(world *World) {
-	s := controller.world.store
-	tm.Printf("entity count: %d\n", len(s.entitiesById))
-	tm.Printf("entity dump: %#v\n", s.entitiesById)
-	tm.Printf("component count: %d\n", len(s.componentsById))
-	tm.Printf("component dump: %#v\n", s.componentsById)
-	tm.Printf("positions count: %#v\n", len(s.positionSummary))
-	tm.Printf("positions: %#v\n", s.positionSummary)
+func CurrentConsoleDimensions() (height, width int) {
+	currentHeight := int(tm.Height())
+	currentWidth := int(tm.Width())
 
-	// modal ui button
-	tm.MoveCursor(1, int(controller.displayRows-1))
-	tm.Print("<esc> to return to world view")
+	if currentWidth > textDisplayMaxCols {
+		currentWidth = textDisplayMaxCols
+	}
+
+	return currentHeight, currentWidth
 }

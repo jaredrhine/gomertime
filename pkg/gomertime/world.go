@@ -1,15 +1,5 @@
 package gomertime
 
-const (
-	worldXMin, worldXMax      = -25, 25
-	worldYMin, worldYMax      = -25, 25
-	worldZMin, worldZMax      = -25, 25
-	worldTickStart            = 0
-	worldTickMax              = 60000
-	worldTickSleepMillisecond = 125
-	worldWraps                = true
-)
-
 type World struct {
 	tickCurrent int
 	store       *WorldStore

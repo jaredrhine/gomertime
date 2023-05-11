@@ -1,4 +1,4 @@
 bin/
-.vscode/launch.json
+.vscode/
 *.out
 *.test

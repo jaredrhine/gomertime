@@ -10,7 +10,7 @@ import (
 var logLevel = new(slog.LevelVar)
 
 func main() {
-	file, _ := os.Create(gomer.LogFilePrefix + "server.log")
+	file, _ := os.Create(gomer.LogFilePrefix + "textclient.log")
 	defer file.Close()
 
 	logLevel.Set(slog.LevelInfo)
@@ -19,9 +19,6 @@ func main() {
 	logger := slog.New(loghandler)
 	slog.SetDefault(logger)
 
-	controller := gomer.NewControllerAndWorld(logLevel)
-	gomer.InitMainWorld(controller)
-	go gomer.StartServer(controller)
-	slog.Info("starting gomertime server")
-	controller.TickAlmostForever()
+	app := gomer.NewTextClientApp()
+	app.Startup()
 }

@@ -14,7 +14,7 @@ Last update: April 2023
     go version
     git clone https://github.com/jaredrhine/gomertime
     cd gomertime
-    go mod download
+    go get
    ```
 
 1. Run the gomertime server in one window/tab:
@@ -49,12 +49,15 @@ This codebase and line of work is undertaken with these goals in mind:
    - ...so we'll recreate an ECS architecture from first principles, rather than using an existing ECS library.
    - ...so we'll genericize the implementation to support two or more simulations within this one codebase.
    - ...so we'll not start with an "archetype"-based ECS architecture, which is commonly done as a performance optimization to group entities for faster lookup.
-4. Don't get lost in the details
-   - Just get an end-to-end simulation running. Don't be afraid to take shortcuts around hard problems that real games need to solve.
-   - Focus on text-only interfaces.
-5. I want to support multiple-client and persistent server scenarios.
+4. I want to support multiple-client and persistent server scenarios.
    - ...so we'll move towards client/server architecture early
      - ...and use JSON and WebSockets to learn HTTP-oriented go development, even though those probably aren't the right choices for a high-performance game framework.
+**5. Don't get lost in the details
+   - ...so we'll minimize following of ECS literature.
+   - ...so won't be afraid to take shortcuts around hard problems that real games need to solve.
+   - ...so I'll minimize testing because the code structure is likely to change repeatedly due to my unfamilarity with the problem space.
+   - ...so the UIs will start as text-only.
+   - ...so we'll fail fast (let errors happen) and minimize focus on correctness and robustness.
 
 ## Sketch architecture
 
@@ -109,9 +112,7 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - ~~WebSocket server framework, listens on socket~~
 
 - Shortlist
-  - Rationalize the float/integer values used in position summary
   - Utility function to count number of neighbors
-  - Implement
   - Rewrite using `time.NewTicker`
   - Add Health component
   - Find nearby entities
@@ -151,6 +152,7 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - Data blob for component, independent of entity-specific data
   - Turn off worldTickMax by default
   - Lua engine embedded to write rules
+  - Rationalize the float/integer values used in position summary
 
 - Simulation
   - Enforce world boundaries during motion, worldXMin, worldXMax...

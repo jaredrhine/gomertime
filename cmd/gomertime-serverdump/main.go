@@ -24,15 +24,15 @@ func gomerRead() {
 	}
 	defer c.Close(websocket.StatusInternalError, "websocket server connection has closed")
 
-	var v []gomer.PositionOnWire
+	var update gomer.AgentUpdate
 
 	for {
-		err = wsjson.Read(ctx, c, &v)
+		err = wsjson.Read(ctx, c, &update)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println("pos", v)
+		fmt.Println("update", update)
 	}
 }
 

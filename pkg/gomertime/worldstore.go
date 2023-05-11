@@ -9,7 +9,7 @@ import (
 
 // Note: A good ECS system will use optimized data structures to support high-performance querying and update of millions of components. Here, we build a naive implementation to first focus on the interfaces and simulation aspects of this codebase.
 
-type PositionKey [2]int
+type PositionKey [3]int
 
 type WorldStore struct {
 	entitiesById    map[uint64]*Entity
@@ -60,6 +60,11 @@ func (s *WorldStore) GetComponentByName(name string) (component *Component, err 
 	return
 }
 
+// func (s *WorldStore) EntitiesOfComponentName(name string) []*Entity {
+// 	comp, _ := s.GetComponentByName(name)
+// 	return comp.entityData
+// }
+
 func (s *WorldStore) UpdatePositionSummary() {
 	s.positionSummary = make(map[PositionKey]uint64)
 
@@ -67,7 +72,7 @@ func (s *WorldStore) UpdatePositionSummary() {
 	for eid, data := range positionComponent.entityData {
 		x := data.(*Position).x
 		y := data.(*Position).y
-		key := [2]int{int(x), int(y)}
+		key := [3]int{int(x), int(y), 0}
 		s.positionSummary[key] = eid
 	}
 }

@@ -18,10 +18,6 @@ const (
 	DevScreen
 )
 
-const (
-	textDisplayMaxCols = 60
-)
-
 type Controller struct {
 	world           *World
 	viewportOriginX float64
@@ -33,21 +29,14 @@ type Controller struct {
 	footerRows      int
 	userScreen      int
 	ticker          chan bool
+	tickers         []chan bool
+	logLevel        *slog.LevelVar
 }
 
-type KeyboardEvent struct {
-	rune rune
-	key  keyboard.Key
-}
-
-func NewControllerAndWorld() (controller *Controller) {
+func NewControllerAndWorld(logLevel *slog.LevelVar) (controller *Controller) {
 	world := NewWorld()
 
-	currentHeight := int(tm.Height())
-	currentWidth := int(tm.Width())
-	if currentWidth > textDisplayMaxCols {
-		currentWidth = textDisplayMaxCols
-	}
+	currentHeight, currentWidth := CurrentConsoleDimensions()
 
 	controller = &Controller{
 		world:           world,
@@ -59,8 +48,20 @@ func NewControllerAndWorld() (controller *Controller) {
 		viewportOriginX: 0,
 		viewportOriginY: 0,
 		viewportOriginZ: 0,
+		logLevel:        logLevel,
+		tickers:         make([]chan bool, 0),
 	}
 	return
+}
+
+func (c *Controller) AddTickListenChannel(listener chan bool) {
+	c.tickers = append(c.tickers, listener)
+}
+
+func (c *Controller) BroadcastTick() {
+	for _, v := range c.tickers {
+		v <- true
+	}
 }
 
 func (c *Controller) TickAlmostForever() {
@@ -112,8 +113,10 @@ func (c *Controller) TickAlmostForever() {
 			} else if event.key == 32 { // space
 				tickRunning = !tickRunning
 			} else if event.key == 27 { // esc
+				c.logLevel.Set(slog.LevelInfo)
 				c.userScreen = WorldScreen
 			} else if event.rune == 'd' {
+				c.logLevel.Set(slog.LevelDebug)
 				c.userScreen = DevScreen
 
 				// handle arrow keys to move viewport in world screen only
@@ -133,9 +136,10 @@ func (c *Controller) TickAlmostForever() {
 				w.RunTick()
 				w.store.UpdatePositionSummary()
 				ticker <- true
+				c.BroadcastTick()
 			}
 			c.TextDump(w)
-			time.Sleep(time.Millisecond * worldTickSleepMillisecond) // TODO: do time subtraction and wait milliseconds; use time.NewTicker
+			time.Sleep(TickSimpleSleep()) // TODO: do time subtraction and wait milliseconds; use time.NewTicker
 		}
 
 		if w.tickCurrent >= worldTickMax {
