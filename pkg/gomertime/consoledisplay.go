@@ -11,6 +11,7 @@ import (
 type TextDisplayAgent struct {
 	viewportOriginX   float64
 	viewportOriginY   float64
+	viewportOriginZ   float64
 	displayRows       int
 	displayCols       int
 	headerRows        int
@@ -25,8 +26,14 @@ func NewTextDisplayAgent() *TextDisplayAgent {
 	currentHeight, currentWidth := CurrentConsoleDimensions()
 
 	return &TextDisplayAgent{
-		displayRows: currentHeight,
-		displayCols: currentWidth,
+		userScreen:      WorldScreen,
+		displayRows:     currentHeight,
+		displayCols:     currentWidth,
+		headerRows:      2,
+		footerRows:      3,
+		viewportOriginX: 0,
+		viewportOriginY: 0,
+		viewportOriginZ: 0,
 	}
 }
 
