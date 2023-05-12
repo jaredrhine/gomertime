@@ -8,21 +8,14 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type PositionDetails struct {
-	label string
-	icon  string
-}
-
 type TextDisplayAgent struct {
 	viewportOriginX   float64
 	viewportOriginY   float64
-	viewportOriginZ   float64
 	displayRows       int
 	displayCols       int
 	headerRows        int
 	footerRows        int
 	userScreen        int
-	clientTickCurrent int
 	serverTickCurrent int
 	timeToExit        bool
 	positions         []PositionOnWire
@@ -196,7 +189,7 @@ func textIconForEntityLabel(label string) (icon string) {
 		"whacky":   "W",
 		"entity":   "E",
 		"homebase": "H",
-		"origin":   "O",
+		"origin":   "+",
 		"mover":    "M",
 	}
 	if val, err := icons[label]; err {

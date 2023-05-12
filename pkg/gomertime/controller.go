@@ -142,10 +142,6 @@ func (c *Controller) TickAlmostForever() {
 			time.Sleep(TickSimpleSleep()) // TODO: do time subtraction and wait milliseconds; use time.NewTicker
 		}
 
-		if w.tickCurrent >= worldTickMax {
-			timeToExit = true
-		}
-
 		if timeToExit {
 			tm.MoveCursor(1, c.displayRows)
 			tm.Println("")

@@ -110,52 +110,62 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - ~~Split out main package from pkg code~~
   - ~~Logging file is set by default, stderr avoided~~
   - ~~WebSocket server framework, listens on socket~~
+  - ~~Text client is able to connect to websocket server, receive server tick, and display~~
+  - ~~Log level can be changed at start and at runtime~~
+  - ~~Enforce world boundaries during motion, worldXMin, worldXMax...~~
+  - ~~Toroidal world option to wrap around world~~
+  - ~~Text client is able to show updating server positions~~
+  - ~~Move position summary websockets push to array of objects, separate the x/y components while eliminating string key~~
+  - ~~Text client is able to move around its viewport independently~~
+  - Split server and client fully
 
 - Shortlist
+  - Fix client 0,0 not being same as server 0,0
+  - Client can connect to custom hostname/port. Client connection over tailscale tunnel confirmed.
+  - Server is headless
   - Utility function to count number of neighbors
-  - Rewrite using `time.NewTicker`
+  - Rewrite server using `time.NewTicker`
+  - Add Acceleration component, including a cyclical function to watch an entity cycle back and forth. Ooo, and then circles.
   - Add Health component
   - Find nearby entities
   - Conway game of life rule implementation
 
 - Server/client
-  - Move position summary websockets push to array of objects, separate the x/y components while eliminating string key
-  - Text client that is able to connect to websocket server, receive position pushes, and display
   - Text client is able to send commands/updates to server
-  - Text client display for multiple simultaneous clients
-  - Text client registers a viewport, and updates a viewport
-  - Register and calculate multiple viewports, supporting multiple clients looking at different places of the world. Clients register their viewport for the server to precalculate. Server pushes only their viewport
-  - Split server and client fully
+  - Client registers its viewport, and server updates distinct caches for each client. Client at least receives some subset of every position in the world, as an optimization.
+  - Any clients is able to pause the server
+  - Clients are able to vote on pausing the server. When all clients have requested the server be paused, the server pauses until requested by any client to restart.
 
 - Display, UI
   - Limit console vertical to a maximum height
   - Camera follows entity
   - Web canvas output
   - Zoom in/out
+  - Text display dynamically resizes when window resizes
   - Don't clear text screen every frame, only when needed. Minimize flashing.
-  - Vertical/elevation support in text somehow
   - Dev console/palette
+  - Vertical/elevation support in text somehow
 
 - Core, game loop, golang
+  - Pass to examine and respond to errors; add error handling throughout
   - Buildings which transform goods
-  - Log level can be changed at start and at runtime(?)
   - systems as goroutines. first: mover managing position
+  - Track wall clock time for stats
   - loop over systems (for _, system := range world.Systems() ?)
   - Cache viewport boundaries (xmin/xmax/ymin/ymax)
   - Logging sophistication
   - Genericize into IdType uint64
   - Testing
+  - CI
   - Benchmarking
   - WebAssembly
   - Optimization of PositionSummary. Perhaps only calculate all positions within a region
   - Split code into multiple modules
   - Data blob for component, independent of entity-specific data
-  - Turn off worldTickMax by default
   - Lua engine embedded to write rules
   - Rationalize the float/integer values used in position summary
 
 - Simulation
-  - Enforce world boundaries during motion, worldXMin, worldXMax...
   - Food consumption
   - Pathfinding
   - Force and acceleration
@@ -168,7 +178,6 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - Multiple components at same position (works now)
   - Entity size/shape somehow. Entities can spread over multiple coordinates. Center of mass position.
   - Edge of world handling. Bounce off walls. Hard stop.
-  - Toroidal world option to wrap around world
   - Fields, scalar (or vector) values at each position in the world. Magnetic, photon flux, gravity, ?
   - Engineering with a company. Model dev motivation, daily work
   - Reimplement "puffball" pro-forma ledger automation and modeling infrastructure as entities, and model ticks as the process over time.

@@ -3,7 +3,6 @@ package gomertime
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	tm "github.com/buger/goterm"
@@ -15,6 +14,8 @@ import (
 )
 
 type TextClientApp struct {
+	clientTickCurrent int
+
 	display  *TextDisplayAgent
 	updates  chan AgentUpdate
 	commands chan AgentCommand
@@ -71,9 +72,6 @@ func ProcessGomerUpdates(updates chan AgentUpdate, agent *TextClientApp) {
 		update := <-updates
 		agent.display.serverTickCurrent = update.ServerTickCurrent
 		agent.display.positions = update.Positions
-		for i, val := range agent.display.positions {
-			slog.Info("pos val", "type", reflect.TypeOf(val), "i", i, "val", val)
-		}
 	}
 }
 
@@ -83,7 +81,8 @@ func ConsoleClientLoop(app *TextClientApp) {
 
 	for {
 		<-ticker.C
-		slog.Info("DisplayRefresh", "tick", a.serverTickCurrent)
+		app.clientTickCurrent = app.clientTickCurrent + 1
+		slog.Debug("DisplayRefresh", "serverTick", a.serverTickCurrent, "clientTick", app.clientTickCurrent)
 		a.DisplayRefresh()
 
 		if a.timeToExit {

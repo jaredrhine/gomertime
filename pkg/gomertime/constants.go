@@ -5,7 +5,6 @@ const (
 	worldYMin, worldYMax           = -25, 25
 	worldZMin, worldZMax           = -25, 25
 	worldTickStart                 = 0
-	worldTickMax                   = 60000
 	worldTickTargetFramesPerSecond = 10
 	worldWraps                     = true
 )
