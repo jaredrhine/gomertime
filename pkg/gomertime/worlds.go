@@ -17,15 +17,15 @@ func InitMainWorld(controller *Controller) {
 
 	mover1 := s.NewEntity("mover")
 	mover1.AddComponent(pos, &Position{x: -5, y: -2, z: 0})
-	mover1.AddComponent(vel, &Velocity{x: 0.25, y: -0.1, z: 0})
+	mover1.AddComponent(vel, &Velocity{x: 2.5, y: -1.0, z: 0})
 
 	mover2 := s.NewEntity("mover")
 	mover2.AddComponent(pos, &Position{x: 2, y: -2, z: 0})
-	mover2.AddComponent(vel, &Velocity{x: 3, y: 0, z: 0})
+	mover2.AddComponent(vel, &Velocity{x: 30, y: 0, z: 0})
 
 	mover3 := s.NewEntity("mover")
 	mover3.AddComponent(pos, &Position{x: 4, y: -4, z: 0})
-	mover3.AddComponent(vel, &Velocity{x: 0, y: -0.75, z: 0})
+	mover3.AddComponent(vel, &Velocity{x: 0, y: -7.5, z: 0})
 
 	whacky1 := s.NewEntity("whacky")
 	whacky1.AddComponent(pos, &Position{x: -6, y: -6, z: -1})

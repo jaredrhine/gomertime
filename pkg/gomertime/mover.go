@@ -21,8 +21,8 @@ func (w *World) UpdatePositions() {
 		slog.Debug(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, pxold, pyold, dx, dy))
 
 		// TODO: updating value in-place is sequence-dependent; better to use generations or some configurable order at least
-		posaspect.x = pxold + dx
-		posaspect.y = pyold + dy
+		posaspect.x = pxold + (dx / worldTickTargetFramesPerSecond)
+		posaspect.y = pyold + (dy / worldTickTargetFramesPerSecond)
 
 		// This wrap isn't exact, if Xmax is 100, then winding up at X=102 results in X=Xmin not X=Xmin + 2
 		if worldWraps {

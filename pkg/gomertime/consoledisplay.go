@@ -9,41 +9,49 @@ import (
 )
 
 type TextDisplayAgent struct {
+	displayCols       int
+	displayRows       int
+	footerRows        int
+	headerRows        int
+	horizontalRow     string
+	positions         []PositionOnWire
+	serverTickCurrent int
+	timeToExit        bool
+	userScreen        int
 	viewportOriginX   float64
 	viewportOriginY   float64
 	viewportOriginZ   float64
-	displayRows       int
-	displayCols       int
-	headerRows        int
-	footerRows        int
-	userScreen        int
-	serverTickCurrent int
-	timeToExit        bool
-	positions         []PositionOnWire
 }
 
-func NewTextDisplayAgent() *TextDisplayAgent {
+func NewTextDisplayAgent() (agent *TextDisplayAgent) {
 	currentHeight, currentWidth := CurrentConsoleDimensions()
 
-	return &TextDisplayAgent{
-		userScreen:      WorldScreen,
-		displayRows:     currentHeight,
-		displayCols:     currentWidth,
-		headerRows:      2,
-		footerRows:      3,
-		viewportOriginX: 0,
-		viewportOriginY: 0,
-		viewportOriginZ: 0,
-	}
+	agent = &TextDisplayAgent{}
+
+	_ = agent.viewportOriginZ // silence warnings about lack of use. Text-based "Z" usage is way down the roadmap.
+
+	agent.userScreen = WorldScreen
+	agent.displayRows = currentHeight
+	agent.displayCols = currentWidth
+	agent.headerRows = 2
+	agent.footerRows = 3
+
+	agent.UpdateHorizontalRow()
+
+	return
 }
 
-func (a *TextDisplayAgent) DisplayRefresh() {
-	var screenLabel string
-
+func (a *TextDisplayAgent) UpdateHorizontalRow() {
 	var hrow strings.Builder
 	for i := 0; i <= a.displayCols; i++ {
 		hrow.WriteRune('-')
 	}
+
+	a.horizontalRow = hrow.String()
+}
+
+func (a *TextDisplayAgent) DisplayRefresh() {
+	var screenLabel string
 
 	title := "gomertime - toy simulation in go"
 	titleRich := tm.Background(tm.Color(tm.Bold(title), tm.WHITE), tm.BLUE)
@@ -72,11 +80,11 @@ func (a *TextDisplayAgent) DisplayRefresh() {
 
 	// header: horizontal rule
 	tm.MoveCursor(1, 2)
-	tm.Print(hrow.String())
+	tm.Print(a.horizontalRow)
 
 	// footer: horizontal rule
 	tm.MoveCursor(1, int(a.displayRows-2))
-	tm.Print(hrow.String())
+	tm.Print(a.horizontalRow)
 
 	// footer: global buttons
 	tm.MoveCursor(1, int(a.displayRows))
