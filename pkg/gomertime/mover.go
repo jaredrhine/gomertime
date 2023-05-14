@@ -44,3 +44,48 @@ func (w *World) UpdatePositions() {
 		}
 	}
 }
+
+func (w *World) UpdateVelocities() {
+	s := w.store
+	accelComponent, _ := s.GetComponentByName("acceleration")
+	for eid, data := range accelComponent.entityData {
+		dx := data.(*Acceleration).x
+		dy := data.(*Acceleration).y
+		vel, _ := s.GetComponentByName("velocity")
+		data := vel.EntityData(eid)
+		velaspect := data.(*Velocity)
+		vxold := velaspect.x
+		vyold := velaspect.y
+
+		slog.Debug(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, vxold, vyold, dx, dy))
+
+		// TODO: updating value in-place is sequence-dependent; better to use generations or some configurable order at least
+		velaspect.x = vxold + (dx / worldTickTargetFramesPerSecond)
+		velaspect.y = vyold + (dy / worldTickTargetFramesPerSecond)
+
+		if velaspect.x > maxVelocity {
+			velaspect.x = maxVelocity
+		}
+		if velaspect.y > maxVelocity {
+			velaspect.y = maxVelocity
+		}
+	}
+}
+
+func (w *World) UpdateCircleMovers() {
+	s := w.store
+	cirComponent, _ := s.GetComponentByName("moves-in-circle")
+	for eid, data := range cirComponent.entityData {
+		phase := data.(*CircleMover).phase
+		scale := data.(*CircleMover).scale
+		accel := CircleAccelerationScaled(w.tickCurrent, phase, scale)
+		x, y, z := accel.x, accel.y, accel.z
+		acc, _ := s.GetComponentByName("acceleration")
+		data := acc.EntityData(eid)
+		accaspect := data.(*Acceleration)
+		accaspect.x = x
+		accaspect.y = y
+		accaspect.z = z
+		slog.Debug("UpdateCircleMovers", "circles", len(cirComponent.entityData), "x", x, "y", y)
+	}
+}

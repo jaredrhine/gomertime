@@ -5,6 +5,8 @@ func InitMainWorld(controller *Controller) {
 
 	pos := s.NewComponent("position")
 	vel := s.NewComponent("velocity")
+	acc := s.NewComponent("acceleration")
+	cir := s.NewComponent("moves-in-circle")
 
 	e1 := s.NewEntity("entity")
 	e1.AddComponent(pos, &Position{x: 4, y: 4, z: 0})
@@ -19,6 +21,11 @@ func InitMainWorld(controller *Controller) {
 	mover1.AddComponent(pos, &Position{x: -5, y: -2, z: 0})
 	mover1.AddComponent(vel, &Velocity{x: 2.5, y: -1.0, z: 0})
 
+	acc1 := s.NewEntity("mover")
+	acc1.AddComponent(pos, &Position{x: 1, y: -3, z: 0})
+	acc1.AddComponent(vel, &Velocity{x: 2, y: 0, z: 0})
+	acc1.AddComponent(acc, &Acceleration{x: -0.2, y: 0, z: 0})
+
 	mover2 := s.NewEntity("mover")
 	mover2.AddComponent(pos, &Position{x: 2, y: -2, z: 0})
 	mover2.AddComponent(vel, &Velocity{x: 30, y: 0, z: 0})
@@ -26,6 +33,12 @@ func InitMainWorld(controller *Controller) {
 	mover3 := s.NewEntity("mover")
 	mover3.AddComponent(pos, &Position{x: 4, y: -4, z: 0})
 	mover3.AddComponent(vel, &Velocity{x: 0, y: -7.5, z: 0})
+
+	circle := s.NewEntity("circle")
+	circle.AddComponent(pos, &Position{x: 18, y: -7, z: 0})
+	circle.AddComponent(vel, &Velocity{x: 0, y: 0, z: 0})
+	circle.AddComponent(acc, &Acceleration{x: -0, y: 0, z: 0})
+	circle.AddComponent(cir, &CircleMover{phase: 7.0, scale: 30.0})
 
 	whacky1 := s.NewEntity("whacky")
 	whacky1.AddComponent(pos, &Position{x: -6, y: -6, z: -1})

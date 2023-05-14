@@ -206,6 +206,7 @@ func textIconForEntityLabel(label string) (icon string) {
 		"homebase": "H",
 		"origin":   "+",
 		"mover":    "M",
+		"circle":   "C",
 	}
 	if val, err := icons[label]; err {
 		return val

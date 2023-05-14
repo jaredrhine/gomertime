@@ -1,7 +1,7 @@
 package gomertime
 
 const (
-	worldXMin, worldXMax           = -25, 25
+	worldXMin, worldXMax           = -25, 50
 	worldYMin, worldYMax           = -25, 25
 	worldZMin, worldZMax           = -25, 25
 	worldTickStart                 = 0
@@ -12,6 +12,10 @@ const (
 const (
 	clientTickTargetFramesPerSecond = 20
 	textDisplayMaxCols              = 60
+)
+
+const (
+	maxVelocity = 50.0
 )
 
 const (

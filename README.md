@@ -117,17 +117,17 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - ~~Text client is able to show updating server positions~~
   - ~~Move position summary websockets push to array of objects, separate the x/y components while eliminating string key~~
   - ~~Text client is able to move around its viewport independently~~
-  - Split server and client fully
 
 - Shortlist
-  - Fix client 0,0 not being same as server 0,0
+  - Add Acceleration component, including a cyclical function to watch an entity cycle back and forth. Ooo, and then circles.
   - Client can connect to custom hostname/port. Client connection over tailscale tunnel confirmed.
   - Server is headless
   - Utility function to count number of neighbors
   - Rewrite server using `time.NewTicker`
-  - Add Acceleration component, including a cyclical function to watch an entity cycle back and forth. Ooo, and then circles.
+  - Split server and client fully
   - Add Health component
   - Find nearby entities
+  - Startup with origin in middle of screen. Display X,Y of cursor rather than
   - Conway game of life rule implementation
 
 - Server/client
@@ -135,6 +135,7 @@ For Velocity, the 3-tuple represents a 3D vector, pointed in a specific directio
   - Client registers its viewport, and server updates distinct caches for each client. Client at least receives some subset of every position in the world, as an optimization.
   - Any clients is able to pause the server
   - Clients are able to vote on pausing the server. When all clients have requested the server be paused, the server pauses until requested by any client to restart.
+  - Move to gob, flatbuffers, messagepack, protobufs on the wire
 
 - Display, UI
   - Limit console vertical to a maximum height

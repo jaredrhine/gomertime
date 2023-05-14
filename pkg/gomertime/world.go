@@ -16,6 +16,8 @@ func (w *World) UpdateWorld() {
 	// for id, system := range w.systems
 	// systems as go routinesg
 	w.UpdatePositions()
+	w.UpdateVelocities()
+	w.UpdateCircleMovers()
 }
 
 func (w *World) RunTick() {
