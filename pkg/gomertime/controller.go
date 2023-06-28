@@ -29,7 +29,7 @@ type Controller struct {
 	footerRows      int
 	userScreen      int
 	ticker          chan bool
-	tickers         []chan bool
+	tickbox *Tickbox
 	logLevel        *slog.LevelVar
 }
 
@@ -60,7 +60,11 @@ func (c *Controller) AddTickListenChannel(listener chan bool) {
 
 func (c *Controller) BroadcastTick() {
 	for _, v := range c.tickers {
+		// _, ok := <- true
 		v <- true
+		// if !ok {
+		// 	slog.Info("Uhhhh")
+		// }
 	}
 }
 

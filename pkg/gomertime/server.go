@@ -112,13 +112,18 @@ func (s gomerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// make a listen channel for this particular websocket client
-	// listen := make(chan bool)
-	// s.controller.AddTickListenChannel(listen)
+	listen := make(chan bool)
+	s.controller.AddTickListenChannel(listen)
 
 	for {
 		// TODO: listen/register with new tickers. using AddTickListenChannel will block server when clients disconnect
-		// <-listen
-		<-s.controller.ticker
+		_, ok := <-listen
+		if !ok {
+			slog.Info("ServeHTTP <-listen closed")
+			return
+		}
+
+		// <-s.controller.ticker
 		slog.Debug("inside for loop in ServeHTTP", "tick", s.controller.world.tickCurrent)
 
 		err = viewportUpdate(r.Context(), c, s.controller)

@@ -1,13 +1,18 @@
 package gomertime
 
 type World struct {
-	tickCurrent int
-	store       *WorldStore
+	tickCurrent          int
+	targetTicksPerSecond float64
+	store                *WorldStore
 }
 
 func NewWorld() *World {
 	store := NewWorldStore()
-	w := World{tickCurrent: worldTickStart, store: store}
+	w := World{
+		tickCurrent:          worldTickStart,
+		targetTicksPerSecond: worldTickTargetFramesPerSecond,
+		store:                store,
+	}
 	return &w
 }
 

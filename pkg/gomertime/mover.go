@@ -2,6 +2,7 @@ package gomertime
 
 import (
 	"fmt"
+	"math"
 
 	"golang.org/x/exp/slog"
 )
@@ -18,7 +19,7 @@ func (w *World) UpdatePositions() {
 		pxold := posaspect.x
 		pyold := posaspect.y
 
-		slog.Debug(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, pxold, pyold, dx, dy))
+		slog.Info(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, pxold, pyold, dx, dy))
 
 		// TODO: updating value in-place is sequence-dependent; better to use generations or some configurable order at least
 		posaspect.x = pxold + (dx / worldTickTargetFramesPerSecond)
@@ -57,11 +58,11 @@ func (w *World) UpdateVelocities() {
 		vxold := velaspect.x
 		vyold := velaspect.y
 
-		slog.Debug(fmt.Sprintf("eid=<%d> pxold=<%0.2f> pyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, vxold, vyold, dx, dy))
+		slog.Info(fmt.Sprintf("eid=<%d> vxold=<%0.2f> vyold=<%0.2f> dx=<%0.2f> dy=<%0.2f>", eid, vxold, vyold, dx, dy))
 
 		// TODO: updating value in-place is sequence-dependent; better to use generations or some configurable order at least
-		velaspect.x = vxold + (dx / worldTickTargetFramesPerSecond)
-		velaspect.y = vyold + (dy / worldTickTargetFramesPerSecond)
+		velaspect.x = vxold + (dx / w.targetTicksPerSecond)
+		velaspect.y = vyold + (dy / w.targetTicksPerSecond)
 
 		if velaspect.x > maxVelocity {
 			velaspect.x = maxVelocity
@@ -76,16 +77,35 @@ func (w *World) UpdateCircleMovers() {
 	s := w.store
 	cirComponent, _ := s.GetComponentByName("moves-in-circle")
 	for eid, data := range cirComponent.entityData {
-		phase := data.(*CircleMover).phase
-		scale := data.(*CircleMover).scale
-		accel := CircleAccelerationScaled(w.tickCurrent, phase, scale)
-		x, y, z := accel.x, accel.y, accel.z
+		mover := data.(*CircleMover)
+		accel := CircleAcceleration(w.tickCurrent, w.targetTicksPerSecond, mover)
 		acc, _ := s.GetComponentByName("acceleration")
 		data := acc.EntityData(eid)
 		accaspect := data.(*Acceleration)
-		accaspect.x = x
-		accaspect.y = y
-		accaspect.z = z
-		slog.Debug("UpdateCircleMovers", "circles", len(cirComponent.entityData), "x", x, "y", y)
+		accaspect.x = accel.x
+		accaspect.y = accel.y
+		accaspect.z = accel.z
+		slog.Info("UpdateCircleMovers", "circles", len(cirComponent.entityData), "x", accel.x, "y", accel.y)
 	}
+}
+
+func CircleAcceleration(tick int, ticksPerSecond float64, mover *CircleMover) Acceleration {
+	secondsPerCycle := mover.secondsPerCycle
+	xscale := mover.xscale
+	yscale := mover.yscale
+	return Acceleration{
+		cycleValueCos(tick, xscale, secondsPerCycle, ticksPerSecond), // x
+		cycleValueSin(tick, yscale, secondsPerCycle, ticksPerSecond), // y
+		0.0, // don't move off of flatland yet
+	}
+}
+
+func cycleValueCos(tick int, scale, secondsPerCycle, ticksPerSecond float64) float64 {
+	phaseval := math.Pi * float64(tick) / (secondsPerCycle * ticksPerSecond)
+	return math.Cos(phaseval) * scale
+}
+
+func cycleValueSin(tick int, scale, secondsPerCycle, ticksPerSecond float64) float64 {
+	phaseval := twoPi * float64(tick) / (secondsPerCycle * ticksPerSecond)
+	return math.Cos(phaseval) * scale
 }
